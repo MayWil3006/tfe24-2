@@ -7,6 +7,9 @@
 #include <vector>
 #include <random> 
 
+#include <algorithm>
+#include <chrono> 
+
 auto main(int argc, char **argv) -> int
 {
     CLI::App app{PROJECT_NAME};
@@ -35,20 +38,26 @@ auto main(int argc, char **argv) -> int
 
     fmt::print("Der übergebene Wert ist: {}\n", count);
 
-    std::vector<int> values;
-    values.reserve(static_cast<std::size_t>(count)); // Speicher für count Elemente reservieren
-
-    std::random_device rd; 
-    std::mt19937 gen(rd());    
+    std::vector<int> values(static_cast<std::size_t>(count));
+    std::random_device rd;
+    std::mt19937 gen(rd());
     std::uniform_int_distribution<int> dist(1, 100);
 
-    for (int i = 0; i < count; ++i) { //Schleife läuft count-mal
-        values.push_back(dist(gen));  //Zufallswert generieren und in den Vektor hinten anhängen
-    }
+    std::generate(values.begin(), values.end(), [&]{ return dist(gen); });
 
     fmt::print("Zufallswerte:");
     for (int v : values) fmt::print(" {}", v);
     fmt::print("\n");
+
+    // Zeit messen
+    auto t0 = std::chrono::steady_clock::now();
+    std::sort(values.begin(), values.end());
+    auto t1 = std::chrono::steady_clock::now();
+
+    // Dauer in Mikrosekunden
+    auto us = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count();
+
+    fmt::print("Sortierdauer: {} µs\n", us);
 
 
     return 0; /* exit gracefully*/
