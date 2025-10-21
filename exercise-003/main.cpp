@@ -4,6 +4,9 @@
 #include "CLI/CLI.hpp"
 #include "config.h"
 
+#include <vector>
+#include <random> 
+
 auto main(int argc, char **argv) -> int
 {
     CLI::App app{PROJECT_NAME};
@@ -31,6 +34,21 @@ auto main(int argc, char **argv) -> int
     fmt::print("Hello, {}!\n", app.get_name());
 
     fmt::print("Der übergebene Wert ist: {}\n", count);
+
+    std::vector<int> values;
+    values.reserve(static_cast<std::size_t>(count)); // Speicher für count Elemente reservieren
+
+    std::random_device rd; 
+    std::mt19937 gen(rd());    
+    std::uniform_int_distribution<int> dist(1, 100);
+
+    for (int i = 0; i < count; ++i) { //Schleife läuft count-mal
+        values.push_back(dist(gen));  //Zufallswert generieren und in den Vektor hinten anhängen
+    }
+
+    fmt::print("Zufallswerte:");
+    for (int v : values) fmt::print(" {}", v);
+    fmt::print("\n");
 
 
     return 0; /* exit gracefully*/
