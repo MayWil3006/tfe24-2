@@ -4,6 +4,8 @@
 #include "CLI/CLI.hpp"
 #include "config.h"
 
+#include "point.hpp"
+
 auto main(int argc, char **argv) -> int
 {
     /**
@@ -29,6 +31,29 @@ auto main(int argc, char **argv) -> int
     fmt::print("Hello, {}!\n", app.get_name());
 
     /* INSERT YOUR CODE HERE */
+
+    Point p1(2,3);  
+    p1.print();
+
+    p1.move(1,-1);   
+    p1.print();
+
+    Point p2;     
+    p2.print();
+
+    // Zusatz 
+
+    Point a(0, 0);
+    Point b(3, 4);
+
+    a.print();
+    b.print();
+
+    double d = a.distance_to(b);
+    fmt::print("Abstand a–b = {:.3f}\n", d);
+
+    b.move(4, 3);  
+    fmt::print("Abstand a–b = {:.3f}\n", a.distance_to(b));
 
     return 0; /* exit gracefully*/
 }
