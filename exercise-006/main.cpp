@@ -6,6 +6,8 @@
 #include "CLI/CLI.hpp"
 #include "config.h"
 
+#include "point.hpp"
+
 // for convenience
 using json = nlohmann::json;
 
@@ -34,6 +36,24 @@ auto main(int argc, char **argv) -> int
     fmt::print("Hello, {}!\n", app.get_name());
 
     /* INSERT YOUR CODE HERE */
+
+    Point<int> p1(2, 3);
+    p1.print();
+    p1.move(5, 4);
+    p1.print();
+
+    Point<int> p2(4, 6);
+    p2.print();
+    p2.move(1, 3);
+    p2.print();
+
+    auto dist = p1.distance_to(p2);
+    fmt::print("Distance between p1 and p2: {:.2f}\n", dist);
+
+    if (p1 == p2)
+        fmt::print("p1 == p2: true\n");
+    else
+        fmt::print("p1 == p2: false\n");
 
     return 0; /* exit gracefully*/
 }
