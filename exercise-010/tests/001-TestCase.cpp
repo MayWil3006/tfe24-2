@@ -3,41 +3,97 @@
 #include <catch2/catch_test_macros.hpp>
 #include "myvector.hpp"
 
-TEST_CASE("Create a MyVector instance", "[myvector]")
-{
-    MyVector vec;
+using namespace tfe24;
+
+TEST_CASE("Konstruktor und Grundzustand", "[MyVector][basic]") {
+    MyVector<int> v;
+
+    REQUIRE(v.size() == 0);
+    REQUIRE(v.capacity() == 0);
+
+    SECTION("push_back erhöht size und wächst geometrisch") {
+        v.push_back(1);
+        v.push_back(2);
+        v.push_back(3);
+
+        REQUIRE(v.size() == 3);
+        REQUIRE(v[0] == 1);
+        REQUIRE(v[1] == 2);
+        REQUIRE(v[2] == 3);
+
+        // Kapazität sollte >= size() sein und darf nicht linear wachsen
+        size_t old_cap = v.capacity();
+        for (int i = 0; i < 100; ++i) v.push_back(i);
+        REQUIRE(v.capacity() >= old_cap); // Wachstum vorhanden
+    }
+
+    SECTION("at() wirft bei Out-of-Range std::out_of_range") {
+        v.push_back(42);
+        REQUIRE_THROWS_AS(v.at(10), std::out_of_range);
+    }
+
+    SECTION("resize größer erzeugt Defaultwerte") {
+        v.resize(5);
+        REQUIRE(v.size() == 5);
+        for (size_t i = 0; i < v.size(); ++i)
+            REQUIRE(v[i] == int{}); // erwartet 0 bei int
+    }
+
+    SECTION("resize kleiner reduziert size") {
+        v.resize(10);
+        v.resize(3);
+        REQUIRE(v.size() == 3);
+        REQUIRE_THROWS_AS(v.at(5), std::out_of_range);
+    }
+
+    SECTION("clear setzt size auf 0, behält capacity") {
+        v.push_back(10);
+        v.push_back(20);
+        auto old_cap = v.capacity();
+        v.clear();
+        REQUIRE(v.size() == 0);
+        REQUIRE(v.capacity() == old_cap);
+    }
 }
 
+TEST_CASE("Copy-Konstruktor und Copy-Zuweisung (Deep Copy)", "[MyVector][copy]") {
+    MyVector<int> a;
+    for (int i = 0; i < 5; ++i) a.push_back(i * 10);
 
-static auto factorial(int number) -> int
-{
-    // return number <= 1 ? number : Factorial( number - 1 ) * number;  // fail
-    return number <= 1 ? 1 : factorial(number - 1) * number;  // pass
+    // Copy-Konstruktor
+    MyVector<int> b = a;
+    REQUIRE(b.size() == a.size());
+    REQUIRE(b.capacity() == a.capacity());
+    for (size_t i = 0; i < a.size(); ++i)
+        REQUIRE(b[i] == a[i]);
+
+    // Copy-Zuweisung
+    MyVector<int> c;
+    c = a;
+    REQUIRE(c.size() == a.size());
+    for (size_t i = 0; i < a.size(); ++i)
+        REQUIRE(c[i] == a[i]);
+
+    // Unabhängigkeit prüfen (Deep Copy)
+    a[0] = 999;
+    REQUIRE(b[0] != a[0]);
+    REQUIRE(c[0] != a[0]);
 }
 
-TEST_CASE("Factorial of 0 is 1 (fail)", "[single-file]")
-{
-    REQUIRE(factorial(0) == 0);
+TEST_CASE("Wachstumsstrategie und Amortisierung", "[MyVector][growth]") {
+    MyVector<int> v;
+
+    size_t prev_cap = 0;
+    for (int i = 0; i < 1000; ++i) {
+        v.push_back(i);
+        if (v.capacity() > prev_cap) {
+            // Kapazität wächst in Sprüngen (nicht bei jedem push_back)
+            size_t diff = v.capacity() - prev_cap;
+            REQUIRE(diff >= 1);
+            prev_cap = v.capacity();
+        }
+    }
+
+    REQUIRE(v.size() == 1000);
+    REQUIRE(v.capacity() >= v.size());
 }
-
-TEST_CASE("Factorials of 1 and higher are computed (pass)", "[single-file]")
-{
-    REQUIRE(factorial(1) == 1);
-    REQUIRE(factorial(2) == 2);
-    REQUIRE(factorial(3) == 6);
-    REQUIRE(factorial(10) == 3628800);
-}
-
-// Compile & run:
-// - g++ -std=c++11 -Wall -I$(CATCH_SINGLE_INCLUDE) -o 010-TestCase 010-TestCase.cpp && 010-TestCase --success
-// - cl -EHsc -I%CATCH_SINGLE_INCLUDE% 010-TestCase.cpp && 010-TestCase --success
-
-// Expected compact output (all assertions):
-//
-// prompt> 010-TestCase --reporter compact --success
-// 010-TestCase.cpp:14: failed: Factorial(0) == 1 for: 0 == 1
-// 010-TestCase.cpp:18: passed: Factorial(1) == 1 for: 1 == 1
-// 010-TestCase.cpp:19: passed: Factorial(2) == 2 for: 2 == 2
-// 010-TestCase.cpp:20: passed: Factorial(3) == 6 for: 6 == 6
-// 010-TestCase.cpp:21: passed: Factorial(10) == 3628800 for: 3628800 (0x375f00) == 3628800 (0x375f00)
-// Failed 1 test case, failed 1 assertion.
